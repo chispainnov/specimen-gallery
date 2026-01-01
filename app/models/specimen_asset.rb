@@ -11,7 +11,7 @@ class SpecimenAsset < ApplicationRecord
 
   validate :image_attached
   validate :cc_by_requires_attribution
-  validate :image_has_transparency_and_size
+  validate :image_content_type
 
   before_validation :default_status
 
@@ -32,27 +32,11 @@ class SpecimenAsset < ApplicationRecord
     errors.add(:attribution_url, "required for CC-BY") if attribution_url.blank?
   end
 
-  def image_has_transparency_and_size
+  def image_content_type
     return unless image.attached?
 
-    blob = image.blob
-    return unless blob.content_type.in?(%w[image/png image/webp])
-
-    require "mini_magick"
-
-    file = MiniMagick::Image.read(blob.download)
-
-    if file.width < 512 || file.height < 512
-      errors.add(:image, "must be at least 512×512")
+    unless image.blob.content_type.in?(%w[image/png image/webp])
+      errors.add(:image, "must be PNG or WebP")
     end
-
-    # transparency check (simple & effective)
-    # PNG/WebP without alpha should fail
-    alpha = file["%[channels]"] # e.g. "rgba"
-    unless alpha.to_s.downcase.include?("a")
-      errors.add(:image, "must have a transparent background (alpha channel)")
-    end
-  rescue => e
-    errors.add(:image, "could not be processed (#{e.class})")
   end
 end

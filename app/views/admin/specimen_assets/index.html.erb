@@ -15,7 +15,7 @@
         <div class="bg-white border border-stone-200 rounded-2xl p-6 flex items-center gap-6">
           <div class="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-stone-100 to-stone-200 rounded-xl overflow-hidden">
             <% if specimen.image.attached? %>
-              <%= image_tag specimen.image.variant(resize_to_fill: [150, 150]),
+              <%= image_tag specimen.image,
                 alt: specimen.scientific_name,
                 class: "w-full h-full object-contain p-2" %>
             <% end %>

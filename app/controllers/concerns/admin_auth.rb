@@ -9,11 +9,9 @@ module AdminAuth
   private
 
   def authenticate_admin!
-    admin_password = ENV["ADMIN_PASSWORD"]
-
-    if admin_password.blank?
+    admin_password = ENV.fetch("ADMIN_PASSWORD") do
       if Rails.env.development? || Rails.env.test?
-        raise "ADMIN_PASSWORD environment variable is not set. Set it to enable admin access."
+        "admin" # default dev password
       else
         head :service_unavailable
         return
