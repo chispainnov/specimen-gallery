@@ -1,0 +1,23 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  scientific_name: MyString
+  common_name: MyString
+  taxon_source: MyString
+  taxon_id: MyString
+  license: MyString
+  attribution_name: MyString
+  attribution_url: MyString
+  status: MyString
+  qc_flags: 
+
+two:
+  scientific_name: MyString
+  common_name: MyString
+  taxon_source: MyString
+  taxon_id: MyString
+  license: MyString
+  attribution_name: MyString
+  attribution_url: MyString
+  status: MyString
+  qc_flags: 

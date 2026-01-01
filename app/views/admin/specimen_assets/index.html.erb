@@ -1,0 +1,66 @@
+<div class="w-full">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="font-serif text-4xl text-stone-900">Pending Queue</h1>
+      <p class="text-stone-600 mt-1">Review and moderate specimen submissions</p>
+    </div>
+    <span class="px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-sm font-medium">
+      <%= @specimen_assets.count %> pending
+    </span>
+  </div>
+
+  <% if @specimen_assets.any? %>
+    <div class="space-y-4">
+      <% @specimen_assets.each do |specimen| %>
+        <div class="bg-white border border-stone-200 rounded-2xl p-6 flex items-center gap-6">
+          <div class="w-24 h-24 flex-shrink-0 bg-gradient-to-br from-stone-100 to-stone-200 rounded-xl overflow-hidden">
+            <% if specimen.image.attached? %>
+              <%= image_tag specimen.image.variant(resize_to_fill: [150, 150]),
+                alt: specimen.scientific_name,
+                class: "w-full h-full object-contain p-2" %>
+            <% end %>
+          </div>
+
+          <div class="flex-grow min-w-0">
+            <h3 class="font-medium text-stone-900 truncate">
+              <em><%= specimen.scientific_name %></em>
+            </h3>
+            <% if specimen.common_name.present? %>
+              <p class="text-sm text-stone-600 truncate"><%= specimen.common_name %></p>
+            <% end %>
+            <p class="text-xs text-stone-500 mt-1">
+              Submitted <%= time_ago_in_words(specimen.created_at) %> ago
+            </p>
+            <p class="text-xs text-stone-500">
+              License:
+              <span class="inline-block px-1.5 py-0.5 bg-stone-100 rounded text-xs">
+                <%= specimen.license == "CC0" ? "CC0" : "CC-BY" %>
+              </span>
+            </p>
+          </div>
+
+          <div class="flex-shrink-0 flex items-center gap-3">
+            <%= button_to admin_specimen_asset_path(specimen, status: "approved"),
+              method: :patch,
+              class: "px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-full hover:bg-emerald-700 transition-colors" do %>
+              ✓ Approve
+            <% end %>
+
+            <%= button_to admin_specimen_asset_path(specimen, status: "rejected"),
+              method: :patch,
+              class: "px-4 py-2 bg-red-100 text-red-700 text-sm font-medium rounded-full hover:bg-red-200 transition-colors" do %>
+              ✗ Reject
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+  <% else %>
+    <div class="text-center py-16 bg-white border border-stone-200 rounded-2xl">
+      <div class="text-6xl mb-4">✨</div>
+      <p class="text-lg text-stone-600 mb-2">Queue is empty</p>
+      <p class="text-sm text-stone-500">No specimens pending review.</p>
+    </div>
+  <% end %>
+</div>
+

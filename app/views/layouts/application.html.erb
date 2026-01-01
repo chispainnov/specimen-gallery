@@ -18,14 +18,51 @@
     <link rel="icon" href="/icon.svg" type="image/svg+xml">
     <link rel="apple-touch-icon" href="/icon.png">
 
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&display=swap" rel="stylesheet">
+
     <%# Includes all stylesheet files in app/assets/stylesheets %>
     <%= stylesheet_link_tag :app, "data-turbo-track": "reload" %>
     <%= javascript_importmap_tags %>
   </head>
 
-  <body>
-    <main class="container mx-auto mt-28 px-5 flex">
+  <body class="min-h-screen bg-stone-50 text-stone-800 font-sans antialiased">
+    <header class="fixed top-0 left-0 right-0 z-50 bg-stone-50/90 backdrop-blur-sm border-b border-stone-200">
+      <nav class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+        <%= link_to root_path, class: "flex items-center gap-2 group" do %>
+          <span class="text-2xl">🦋</span>
+          <span class="font-serif text-xl text-stone-900 group-hover:text-amber-700 transition-colors">Specimen Gallery</span>
+        <% end %>
+
+        <div class="flex items-center gap-6">
+          <%= link_to "Browse", root_path, class: "text-sm font-medium text-stone-600 hover:text-stone-900 transition-colors" %>
+          <%= link_to "Upload", new_specimen_asset_path, class: "text-sm font-medium px-4 py-2 bg-amber-600 text-white rounded-full hover:bg-amber-700 transition-colors" %>
+          <%= link_to "Admin", admin_specimen_assets_path, class: "text-xs text-stone-400 hover:text-stone-600 transition-colors" %>
+        </div>
+      </nav>
+    </header>
+
+    <main class="max-w-6xl mx-auto pt-24 pb-12 px-6">
+      <% if notice.present? %>
+        <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg">
+          <%= notice %>
+        </div>
+      <% end %>
+
+      <% if alert.present? %>
+        <div class="mb-6 p-4 bg-red-50 border border-red-200 text-red-800 rounded-lg">
+          <%= alert %>
+        </div>
+      <% end %>
+
       <%= yield %>
     </main>
+
+    <footer class="border-t border-stone-200 bg-stone-100">
+      <div class="max-w-6xl mx-auto px-6 py-8 text-center text-sm text-stone-500">
+        <p>Specimen Gallery — Open-source natural history specimens</p>
+      </div>
+    </footer>
   </body>
 </html>

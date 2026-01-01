@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_01_031946) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_01_032720) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -40,6 +40,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_01_031946) do
     t.bigint "blob_id", null: false
     t.string "variation_digest", null: false
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
+  end
+
+  create_table "specimen_assets", force: :cascade do |t|
+    t.string "attribution_name"
+    t.string "attribution_url"
+    t.string "common_name"
+    t.datetime "created_at", null: false
+    t.string "license"
+    t.jsonb "qc_flags"
+    t.string "scientific_name"
+    t.string "status"
+    t.string "taxon_id"
+    t.string "taxon_source"
+    t.datetime "updated_at", null: false
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
