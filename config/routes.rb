@@ -1,10 +1,11 @@
 # config/routes.rb
 Rails.application.routes.draw do
-  root "specimen_assets#index"
-  resources :specimen_assets, only: %i[index show new create]
+  root "taxa#index"
+
+  resources :taxa, only: %i[index show]
+  resources :specimen_assets, only: %i[new create]
 
   namespace :admin do
-    resources :specimen_assets, only: %i[index update]
+    resources :specimen_assets, only: %i[index update destroy]
   end
 end
-

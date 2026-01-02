@@ -18,10 +18,20 @@ module Admin
         return
       end
 
-      @specimen_asset.update!(status: new_status)
+      if @specimen_asset.update(status: new_status)
+        redirect_back fallback_location: admin_specimen_assets_path,
+                      notice: "Specimen #{new_status}."
+      else
+        redirect_back fallback_location: admin_specimen_assets_path,
+                      alert: "Failed to update: #{@specimen_asset.errors.full_messages.join(', ')}"
+      end
+    end
+
+    def destroy
+      @specimen_asset = SpecimenAsset.find(params[:id])
+      @specimen_asset.destroy
       redirect_back fallback_location: admin_specimen_assets_path,
-                    notice: "Specimen #{new_status}."
+                    notice: "Specimen deleted."
     end
   end
 end
-

@@ -6,7 +6,7 @@
     </p>
   </div>
 
-  <%= form_with url: specimen_assets_path, method: :get, class: "max-w-md mx-auto mb-12" do |f| %>
+  <%= form_with url: taxa_path, method: :get, class: "max-w-md mx-auto mb-12" do |f| %>
     <div class="relative">
       <%= text_field_tag :q, params[:q],
         placeholder: "Search by scientific name...",
@@ -19,21 +19,24 @@
     </div>
   <% end %>
 
-  <% if @specimen_assets.any? %>
+  <% if @taxa.any? %>
     <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
-      <% @specimen_assets.each do |specimen| %>
-        <%= link_to specimen_asset_path(specimen), class: "group block" do %>
+      <% @taxa.each do |taxon| %>
+        <% specimen = taxon.approved_assets.first %>
+        <%= link_to taxon_path(taxon), class: "group block" do %>
           <div class="aspect-square bg-gradient-to-br from-stone-100 to-stone-200 rounded-2xl overflow-hidden mb-3 ring-1 ring-stone-200 group-hover:ring-amber-400 group-hover:shadow-lg transition-all duration-200">
-            <% if specimen.image.attached? %>
+            <% if specimen&.image&.attached? %>
               <%= image_tag specimen.image,
-                alt: specimen.scientific_name,
+                alt: taxon.scientific_name,
                 class: "w-full h-full object-contain p-4 group-hover:scale-105 transition-transform duration-300" %>
             <% end %>
           </div>
           <p class="text-sm font-medium text-stone-700 group-hover:text-amber-700 transition-colors truncate">
-            <em><%= specimen.scientific_name %></em>
+            <em><%= taxon.scientific_name %></em>
           </p>
-          <% if specimen.common_name.present? %>
+          <% if taxon.approved_assets_count > 1 %>
+            <p class="text-xs text-stone-500"><%= taxon.approved_assets_count %> images</p>
+          <% elsif specimen&.common_name.present? %>
             <p class="text-xs text-stone-500 truncate"><%= specimen.common_name %></p>
           <% end %>
         <% end %>
@@ -44,7 +47,7 @@
       <div class="text-6xl mb-4">🔍</div>
       <p class="text-lg text-stone-600 mb-2">No specimens found</p>
       <% if params[:q].present? %>
-        <p class="text-sm text-stone-500">Try a different search term or <%= link_to "view all", specimen_assets_path, class: "text-amber-600 hover:underline" %></p>
+        <p class="text-sm text-stone-500">Try a different search term or <%= link_to "view all", taxa_path, class: "text-amber-600 hover:underline" %></p>
       <% else %>
         <p class="text-sm text-stone-500">Be the first to <%= link_to "upload a specimen", new_specimen_asset_path, class: "text-amber-600 hover:underline" %>!</p>
       <% end %>

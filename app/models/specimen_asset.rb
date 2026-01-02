@@ -1,19 +1,23 @@
 # app/models/specimen_asset.rb
 class SpecimenAsset < ApplicationRecord
+  belongs_to :taxon
   has_one_attached :image
 
   STATUSES = %w[pending approved rejected].freeze
   LICENSES = %w[CC0 CC_BY].freeze
 
-  validates :scientific_name, presence: true
   validates :status, inclusion: { in: STATUSES }
   validates :license, inclusion: { in: LICENSES }
-
   validate :image_attached
+  validate :image_not_duplicate
   validate :cc_by_requires_attribution
   validate :image_content_type
 
   before_validation :default_status
+  before_validation :compute_sha256_hash
+
+  # Delegate scientific_name for convenience
+  delegate :scientific_name, to: :taxon, allow_nil: true
 
   private
 
@@ -37,6 +41,26 @@ class SpecimenAsset < ApplicationRecord
 
     unless image.blob.content_type.in?(%w[image/png image/webp])
       errors.add(:image, "must be PNG or WebP")
+    end
+  end
+
+  def compute_sha256_hash
+    return unless image.attached?
+    return if sha256_hash.present?
+
+    image.blob.open do |file|
+      self.sha256_hash = Digest::SHA256.file(file.path).hexdigest
+    end
+  rescue => e
+    Rails.logger.warn("Could not compute SHA256: #{e.message}")
+  end
+
+  def image_not_duplicate
+    return unless sha256_hash.present?
+
+    existing = SpecimenAsset.where(sha256_hash: sha256_hash).where.not(id: id).exists?
+    if existing
+      errors.add(:image, "has already been uploaded (duplicate file detected)")
     end
   end
 end
