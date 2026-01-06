@@ -14,14 +14,25 @@
   <% end %>
 
   <%= form_with model: @specimen_asset, class: "space-y-6", data: { controller: "license" } do |f| %>
-    <div>
+    <div data-controller="taxon-autocomplete" data-taxon-autocomplete-url-value="<%= suggest_taxa_path %>">
       <%= f.label :scientific_name, class: "block text-sm font-medium text-stone-700 mb-2" %>
-      <%= text_field_tag "specimen_asset[scientific_name]",
-        params.dig(:specimen_asset, :scientific_name),
-        required: true,
-        placeholder: "e.g., Papilio machaon",
-        class: "w-full px-4 py-3 bg-white border border-stone-300 rounded-xl text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" %>
-      <p class="mt-1 text-xs text-stone-500">If this species already exists, your image will be added to it.</p>
+      <div class="relative">
+        <%= text_field_tag "specimen_asset[scientific_name]",
+          params.dig(:specimen_asset, :scientific_name),
+          required: true,
+          placeholder: "e.g., Papilio machaon",
+          autocomplete: "off",
+          data: {
+            taxon_autocomplete_target: "input",
+            action: "input->taxon-autocomplete#onInput keydown->taxon-autocomplete#onKeydown blur->taxon-autocomplete#onBlur"
+          },
+          class: "w-full px-4 py-3 bg-white border border-stone-300 rounded-xl text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" %>
+
+        <div data-taxon-autocomplete-target="results"
+             class="hidden absolute z-50 left-0 right-0 mt-1 bg-white border border-stone-300 rounded-xl shadow-lg max-h-64 overflow-y-auto">
+        </div>
+      </div>
+      <p class="mt-1 text-xs text-stone-500">Start typing to see suggestions from GBIF taxonomy.</p>
     </div>
 
     <div>
@@ -29,23 +40,6 @@
       <%= f.text_field :common_name,
         placeholder: "e.g., Old World Swallowtail (optional)",
         class: "w-full px-4 py-3 bg-white border border-stone-300 rounded-xl text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" %>
-    </div>
-
-    <div class="grid grid-cols-2 gap-4">
-      <div>
-        <label class="block text-sm font-medium text-stone-700 mb-2">Taxon Source <span class="text-stone-400">(optional)</span></label>
-        <%= text_field_tag "specimen_asset[taxon_source]",
-          params.dig(:specimen_asset, :taxon_source),
-          placeholder: "e.g., iNaturalist",
-          class: "w-full px-4 py-3 bg-white border border-stone-300 rounded-xl text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" %>
-      </div>
-      <div>
-        <label class="block text-sm font-medium text-stone-700 mb-2">Taxon ID <span class="text-stone-400">(optional)</span></label>
-        <%= text_field_tag "specimen_asset[taxon_id]",
-          params.dig(:specimen_asset, :taxon_id),
-          placeholder: "e.g., 52775",
-          class: "w-full px-4 py-3 bg-white border border-stone-300 rounded-xl text-stone-800 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" %>
-      </div>
     </div>
 
     <div>

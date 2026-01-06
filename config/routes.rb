@@ -2,7 +2,11 @@
 Rails.application.routes.draw do
   root "taxa#index"
 
-  resources :taxa, only: %i[index show]
+  resources :taxa, only: %i[index show] do
+    collection do
+      get :suggest
+    end
+  end
   resources :specimen_assets, only: %i[new create]
 
   namespace :admin do

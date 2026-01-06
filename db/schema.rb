@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_01_01_040001) do
+ActiveRecord::Schema[8.1].define(version: 2026_01_06_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -48,26 +48,34 @@ ActiveRecord::Schema[8.1].define(version: 2026_01_01_040001) do
     t.string "common_name"
     t.datetime "created_at", null: false
     t.string "license"
+    t.boolean "needs_review", default: false, null: false
     t.jsonb "qc_flags"
     t.string "sha256_hash"
     t.string "status"
     t.bigint "taxon_id"
     t.datetime "updated_at", null: false
+    t.index ["needs_review"], name: "index_specimen_assets_on_needs_review"
     t.index ["sha256_hash"], name: "index_specimen_assets_on_sha256_hash", unique: true
     t.index ["taxon_id"], name: "index_specimen_assets_on_taxon_id"
   end
 
   create_table "taxa", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.string "gbif_canonical_name"
+    t.integer "gbif_confidence"
+    t.integer "gbif_key"
+    t.string "gbif_match_type"
+    t.string "gbif_rank"
     t.string "rank"
     t.string "scientific_name", null: false
     t.string "taxon_id"
     t.string "taxon_source"
     t.datetime "updated_at", null: false
     t.index "lower((scientific_name)::text)", name: "index_taxa_on_lower_scientific_name", unique: true
+    t.index ["gbif_key"], name: "index_taxa_on_gbif_key"
   end
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "specimen_assets", "taxa", column: "taxon_id"
+  add_foreign_key "specimen_assets", "taxa"
 end
