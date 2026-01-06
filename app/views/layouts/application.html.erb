@@ -27,7 +27,7 @@
     <%= javascript_importmap_tags %>
   </head>
 
-  <body class="min-h-screen bg-stone-50 text-stone-800 font-sans antialiased">
+  <body class="min-h-screen bg-stone-50 text-stone-800 font-sans antialiased flex flex-col">
     <header class="fixed top-0 left-0 right-0 z-50 bg-stone-50/90 backdrop-blur-sm border-b border-stone-200">
       <nav class="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
         <%= link_to root_path, class: "group" do %>
@@ -42,7 +42,7 @@
       </nav>
     </header>
 
-    <main class="max-w-6xl mx-auto pt-24 pb-12 px-6">
+    <main class="flex-grow max-w-6xl mx-auto pt-24 pb-12 px-6 w-full">
       <% if notice.present? %>
         <div class="mb-6 p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg">
           <%= notice %>
