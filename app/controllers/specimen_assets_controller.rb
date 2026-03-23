@@ -235,15 +235,15 @@ class SpecimenAssetsController < ApplicationController
       # Use GBIF canonical name
       canonical_name = gbif_match[:canonical_name].presence || taxon_name
       taxon = Taxon.find_by(scientific_name: canonical_name) ||
-              Taxon.find_by(gbif_key: gbif_match[:key])
+              Taxon.find_by(gbif_key: gbif_match[:usage_key])
 
       unless taxon
         taxon = Taxon.create!(
           scientific_name: canonical_name,
-          gbif_key: gbif_match[:key],
+          gbif_key: gbif_match[:usage_key],
           gbif_rank: gbif_match[:rank],
           taxon_source: "gbif",
-          taxon_id: gbif_match[:key].to_s,
+          taxon_id: gbif_match[:usage_key].to_s,
           group: TaxonGroupResolver.resolve_from_gbif(gbif_match)
         )
       end
