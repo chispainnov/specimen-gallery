@@ -2,9 +2,11 @@
 class SpecimenAssetsController < ApplicationController
   include AnonymousIdentity
 
-  # Rate limit: max 10 uploads per IP per hour
   UPLOAD_RATE_LIMIT = 10
   UPLOAD_RATE_WINDOW = 1.hour
+
+  BG_PREVIEW_RATE_LIMIT = 3
+  BG_PREVIEW_RATE_WINDOW = 1.hour
 
   def show
     @specimen_asset = SpecimenAsset.includes(:taxon, :top_suggested_taxon).find(params[:id])
@@ -91,8 +93,12 @@ class SpecimenAssetsController < ApplicationController
     # Handle image attachment with optional background removal
     bg_removal_failed = false
     bg_removal_total_fail = false
+    bg_preview_used = params[:specimen_asset][:bg_preview_used] == "1"
 
-    if remove_background && uploaded_file.present?
+    if bg_preview_used && uploaded_file.present?
+      @specimen_asset.image.attach(uploaded_file)
+      @specimen_asset.bg_removed = true
+    elsif remove_background && uploaded_file.present?
       result = attach_with_background_removal(uploaded_file)
       if result == true
         # Success - bg removed
@@ -121,6 +127,7 @@ class SpecimenAssetsController < ApplicationController
 
     if @specimen_asset.save
       increment_upload_rate_counter
+      send_submission_email(@specimen_asset)
       redirect_to root_path, notice: submission_notice(@specimen_asset, @review_reason, bg_removal_failed)
     else
       render :new, status: :unprocessable_entity
@@ -129,6 +136,42 @@ class SpecimenAssetsController < ApplicationController
     @specimen_asset = SpecimenAsset.new(specimen_asset_params_without_image)
     @specimen_asset.errors.add(:base, e.message)
     render :new, status: :unprocessable_entity
+  end
+
+  def preview_bg_removal
+    uploaded_file = params[:image]
+
+    unless uploaded_file.present?
+      render json: { error: "No image provided" }, status: :unprocessable_entity
+      return
+    end
+
+    if bg_preview_rate_limited?
+      render json: { error: "Preview limit reached (#{BG_PREVIEW_RATE_LIMIT}/hour). You can still submit — background removal will run on submit." }, status: :too_many_requests
+      return
+    end
+
+    if uploaded_file.size > 10.megabytes
+      render json: { error: "Image too large (max 10MB)" }, status: :unprocessable_entity
+      return
+    end
+
+    begin
+      remover = CloudinaryBackgroundRemover.new(uploaded_file)
+      remover.call
+      increment_bg_preview_rate
+
+      render json: {
+        preview_url: remover.transformed_url,
+        public_id: remover.public_id
+      }
+    rescue CloudinaryBackgroundRemover::RemovalError => e
+      Rails.logger.warn("BG preview failed: #{e.message}")
+      render json: { error: "Background removal failed. You can still submit the original image." }, status: :unprocessable_entity
+    rescue => e
+      Rails.logger.error("BG preview unexpected error: #{e.class} - #{e.message}")
+      render json: { error: "Something went wrong. You can still submit the original image." }, status: :internal_server_error
+    end
   end
 
   # Community ID voting: confirm current taxon assignment
@@ -263,7 +306,7 @@ class SpecimenAssetsController < ApplicationController
       :license,
       :attribution_name,
       :attribution_url,
-      # Trait fields
+      :submitter_email,
       :sex,
       :life_stage,
       :view,
@@ -439,6 +482,14 @@ class SpecimenAssetsController < ApplicationController
     }
   end
 
+  def send_submission_email(specimen_asset)
+    return unless specimen_asset.submitter_email.present?
+
+    SubmissionMailer.status_link(specimen_asset).deliver_later
+  rescue => e
+    Rails.logger.warn("Failed to send submission email: #{e.message}")
+  end
+
   def submission_notice(specimen_asset, review_reason, bg_removal_failed)
     base = if specimen_asset.status == "approved"
       "Your specimen is now live! It will appear in the main gallery once the community verifies the identification."
@@ -455,11 +506,9 @@ class SpecimenAssetsController < ApplicationController
       end
     end
 
-    if bg_removal_failed
-      base + " (Background removal failed — original image submitted)"
-    else
-      base
-    end
+    base += " (Background removal failed — original image submitted)" if bg_removal_failed
+    base += " We sent a status link to your email." if specimen_asset.submitter_email.present?
+    base
   end
 
   # Determine why a specimen went to review (for user feedback)
@@ -517,5 +566,19 @@ class SpecimenAssetsController < ApplicationController
   def increment_upload_rate_counter
     current = Rails.cache.read(upload_rate_limit_key) || 0
     Rails.cache.write(upload_rate_limit_key, current + 1, expires_in: UPLOAD_RATE_WINDOW)
+  end
+
+  def bg_preview_rate_limit_key
+    "bg_preview_rate:#{request.remote_ip}"
+  end
+
+  def bg_preview_rate_limited?
+    count = Rails.cache.read(bg_preview_rate_limit_key) || 0
+    count >= BG_PREVIEW_RATE_LIMIT
+  end
+
+  def increment_bg_preview_rate
+    current = Rails.cache.read(bg_preview_rate_limit_key) || 0
+    Rails.cache.write(bg_preview_rate_limit_key, current + 1, expires_in: BG_PREVIEW_RATE_WINDOW)
   end
 end

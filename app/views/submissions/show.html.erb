@@ -1,0 +1,67 @@
+<% content_for(:title) { "Submission Status — #{@specimen_asset.display_name} | Specimen Gallery" } %>
+<% content_for(:meta_description) { "Check the status of your specimen submission to Specimen Gallery." } %>
+
+<div class="max-w-lg mx-auto pt-4 md:pt-0">
+  <h1 class="font-serif text-3xl text-stone-900 dark:text-stone-100 mb-2 text-center">Submission Status</h1>
+  <p class="text-stone-500 dark:text-stone-400 text-center mb-8 text-sm">This is your private status page.</p>
+
+  <div class="bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-2xl overflow-hidden">
+    <% if @specimen_asset.image.attached? %>
+      <div class="bg-gradient-to-br from-stone-100 to-stone-200 dark:from-stone-700 dark:to-stone-600 p-6 flex items-center justify-center">
+        <%= image_tag @specimen_asset.image,
+          alt: @specimen_asset.display_name,
+          class: "max-w-full max-h-[300px] object-contain" %>
+      </div>
+    <% end %>
+
+    <div class="p-6 space-y-4">
+      <div>
+        <h2 class="font-serif text-2xl text-stone-900 dark:text-stone-100"><%= @specimen_asset.display_name %></h2>
+        <% if @specimen_asset.taxon&.scientific_name.present? && @specimen_asset.taxon.scientific_name != @specimen_asset.display_name %>
+          <p class="text-stone-500 dark:text-stone-400 italic"><%= @specimen_asset.taxon.scientific_name %></p>
+        <% end %>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <span class="text-sm font-medium text-stone-600 dark:text-stone-400">Status:</span>
+        <% case @specimen_asset.status %>
+        <% when "approved" %>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+            Approved
+          </span>
+        <% when "pending" %>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/50 dark:text-amber-300">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Pending Review
+          </span>
+        <% when "rejected" %>
+          <span class="inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            Not Accepted
+          </span>
+        <% end %>
+      </div>
+
+      <% if @specimen_asset.status == "approved" %>
+        <p class="text-sm text-stone-600 dark:text-stone-400">
+          Your specimen is live in the gallery.
+          <%= link_to "View it here →", specimen_asset_path(@specimen_asset), class: "text-amber-600 dark:text-amber-500 hover:underline" %>
+        </p>
+      <% elsif @specimen_asset.status == "pending" %>
+        <p class="text-sm text-stone-600 dark:text-stone-400">
+          Your specimen is in the review queue. We'll update its status once it's been reviewed.
+          Check back here anytime.
+        </p>
+      <% else %>
+        <p class="text-sm text-stone-600 dark:text-stone-400">
+          This specimen wasn't accepted into the gallery. This can happen if the image didn't meet our quality guidelines or was a duplicate.
+        </p>
+      <% end %>
+
+      <div class="pt-2 border-t border-stone-200 dark:border-stone-700 text-xs text-stone-400 dark:text-stone-500">
+        <p><%= @specimen_asset.specimen_id %> · Uploaded <%= @specimen_asset.created_at.strftime("%b %-d, %Y") %></p>
+      </div>
+    </div>
+  </div>
+</div>

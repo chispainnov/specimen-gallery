@@ -17,8 +17,13 @@ Rails.application.routes.draw do
     end
   end
 
+  get "submissions/:token", to: "submissions#show", as: :submission
+
   resources :specimen_assets, only: %i[show new create] do
     resources :flags, only: %i[create]
+    collection do
+      post :preview_bg_removal
+    end
     member do
       post :confirm_id
       post :suggest_id

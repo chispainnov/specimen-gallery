@@ -114,6 +114,9 @@
               <p class="text-xs text-stone-500 dark:text-stone-400 mt-0.5">
                 <%= @filter == "approved" ? "Approved" : "Submitted" %> <%= time_ago_in_words(specimen.created_at) %> ago ·
                 <span class="px-1 py-0.5 bg-stone-100 dark:bg-stone-700 rounded"><%= specimen.license == "CC0" ? "CC0" : "CC-BY" %></span>
+                <% if specimen.submitter_email.present? %>
+                  · <a href="mailto:<%= specimen.submitter_email %>" class="text-amber-600 dark:text-amber-400 hover:underline"><%= specimen.submitter_email %></a>
+                <% end %>
               </p>
             </div>
 

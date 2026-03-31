@@ -26,6 +26,15 @@
               Background removed via Cloudinary
             </p>
           <% end %>
+          <% if @specimen_asset.submitter_email.present? %>
+            <p class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+              <a href="mailto:<%= @specimen_asset.submitter_email %>" class="text-amber-600 dark:text-amber-400 hover:underline"><%= @specimen_asset.submitter_email %></a>
+            </p>
+          <% end %>
+          <% if @specimen_asset.attribution_name.present? %>
+            <p>By: <%= @specimen_asset.attribution_name %></p>
+          <% end %>
         </div>
       </div>
     </div>

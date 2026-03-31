@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_08_195818) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_31_153854) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -91,6 +91,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_08_195818) do
     t.string "sha256_hash"
     t.string "specimen_name"
     t.string "status"
+    t.string "submission_token"
+    t.string "submitter_email"
     t.integer "suggest_count", default: 0, null: false
     t.bigint "taxon_id"
     t.integer "top_suggested_count", default: 0, null: false
@@ -105,6 +107,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_08_195818) do
     t.index ["sex"], name: "index_specimen_assets_on_sex"
     t.index ["sha256_hash"], name: "index_specimen_assets_on_sha256_hash", unique: true
     t.index ["specimen_name"], name: "index_specimen_assets_on_specimen_name"
+    t.index ["submission_token"], name: "index_specimen_assets_on_submission_token", unique: true
     t.index ["taxon_id"], name: "index_specimen_assets_on_taxon_id"
     t.index ["top_suggested_taxon_id"], name: "index_specimen_assets_on_top_suggested_taxon_id"
     t.index ["view"], name: "index_specimen_assets_on_view"

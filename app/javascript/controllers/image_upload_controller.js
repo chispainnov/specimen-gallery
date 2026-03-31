@@ -161,6 +161,9 @@ export default class extends Controller {
   }
 
   handleSubmit(event) {
+    // If bg-preview controller already set the file (user edited the cutout), don't overwrite
+    if (this.element.dataset.bgPreviewActive === "true") return
+
     // If we have a compressed file, swap it into the form
     if (this.compressedFile && this.hasFileInputTarget) {
       // Create a new DataTransfer to set the file input

@@ -1,0 +1,29 @@
+<div style="font-family: Georgia, 'Times New Roman', serif; max-width: 560px; margin: 0 auto; padding: 32px 24px; color: #1c1917;">
+  <h1 style="font-size: 24px; margin-bottom: 8px;">Specimen Gallery</h1>
+  <hr style="border: none; border-top: 1px solid #d6d3d1; margin: 16px 0;">
+
+  <p style="font-family: -apple-system, sans-serif; font-size: 15px; line-height: 1.6; color: #44403c;">
+    Thanks for uploading <strong><%= @specimen_asset.display_name %></strong> to Specimen Gallery.
+  </p>
+
+  <p style="font-family: -apple-system, sans-serif; font-size: 15px; line-height: 1.6; color: #44403c;">
+    Your submission is currently <strong><%= @specimen_asset.status %></strong>.
+    You can check its status anytime using the link below:
+  </p>
+
+  <div style="text-align: center; margin: 28px 0;">
+    <a href="<%= @status_url %>"
+       style="display: inline-block; padding: 12px 28px; background-color: #ca8a04; color: #ffffff; text-decoration: none; border-radius: 999px; font-family: -apple-system, sans-serif; font-size: 14px; font-weight: 600;">
+      View Submission Status
+    </a>
+  </div>
+
+  <p style="font-family: -apple-system, sans-serif; font-size: 13px; line-height: 1.5; color: #78716c;">
+    This link is private to you — don't share it unless you want someone else to see your submission status.
+  </p>
+
+  <hr style="border: none; border-top: 1px solid #d6d3d1; margin: 24px 0;">
+  <p style="font-family: -apple-system, sans-serif; font-size: 12px; color: #a8a29e; text-align: center;">
+    Specimen Gallery — Open-source natural history specimens
+  </p>
+</div>

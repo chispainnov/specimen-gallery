@@ -19,6 +19,7 @@ class SpecimenAsset < ApplicationRecord
   validates :specimen_name, presence: { message: "is required" }
   validates :status, inclusion: { in: STATUSES }
   validates :license, inclusion: { in: LICENSES }
+  validates :submitter_email, format: { with: URI::MailTo::EMAIL_REGEXP, message: "doesn't look valid" }, allow_blank: true
   validate :image_attached
   validate :image_not_duplicate
   validate :cc_by_requires_attribution
@@ -27,6 +28,7 @@ class SpecimenAsset < ApplicationRecord
 
   before_validation :default_status
   before_validation :compute_sha256_hash
+  before_create :generate_submission_token
 
   # Delegate scientific_name for convenience (from taxon)
   delegate :scientific_name, to: :taxon, allow_nil: true
@@ -140,6 +142,10 @@ class SpecimenAsset < ApplicationRecord
     if image.blob.byte_size > max_size
       errors.add(:image, "is too large (#{(image.blob.byte_size / 1.megabyte.to_f).round(1)}MB). Maximum is 10MB.")
     end
+  end
+
+  def generate_submission_token
+    self.submission_token ||= SecureRandom.hex(32)
   end
 
   def compute_sha256_hash

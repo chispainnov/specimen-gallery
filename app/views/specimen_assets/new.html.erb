@@ -13,8 +13,9 @@
     </div>
   <% end %>
 
-  <%= form_with model: @specimen_asset, class: "space-y-6", data: { controller: "image-upload" } do |f| %>
+  <%= form_with model: @specimen_asset, class: "space-y-6", data: { controller: "image-upload bg-preview", bg_preview_url_value: preview_bg_removal_specimen_assets_path } do |f| %>
     <%= f.hidden_field :license, value: "CC0" %>
+    <%= hidden_field_tag "specimen_asset[bg_preview_used]", "0", id: "bg_preview_used", data: { bg_preview_target: "usedFlag" } %>
 
     <!-- Specimen Name (REQUIRED) -->
     <div>
@@ -160,6 +161,16 @@
       <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">Optional. Shown on the specimen page as "Uploaded by".</p>
     </div>
 
+    <!-- Email (optional) -->
+    <div>
+      <%= f.label :submitter_email, "Email", class: "block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2" %>
+      <%= f.email_field :submitter_email,
+        placeholder: "you@example.com",
+        maxlength: 254,
+        class: "w-full px-4 py-3 bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-600 rounded-xl text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" %>
+      <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">Optional. We'll send you a link to check your submission status.</p>
+    </div>
+
     <div>
       <%= f.label :image, class: "block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2" %>
       <div class="relative">
@@ -168,7 +179,7 @@
           required: true,
           data: { 
             image_upload_target: "fileInput",
-            action: "change->image-upload#fileSelected"
+            action: "change->image-upload#fileSelected change->bg-preview#requestPreview"
           },
           class: "block w-full text-sm text-stone-600 dark:text-stone-400 file:mr-4 file:py-3 file:px-6 file:rounded-full file:border-0 file:text-sm file:font-medium file:bg-amber-100 file:text-amber-800 dark:file:bg-amber-800 dark:file:text-amber-100 hover:file:bg-amber-200 dark:hover:file:bg-amber-700 file:cursor-pointer cursor-pointer" %>
       </div>
@@ -205,7 +216,7 @@
         <%= check_box_tag "specimen_asset[remove_background]", "1", false,
           data: { 
             image_upload_target: "removeBackground",
-            action: "change->image-upload#bgToggleChanged"
+            action: "change->image-upload#bgToggleChanged change->bg-preview#requestPreview"
           },
           class: "mt-1 w-4 h-4 text-amber-600 border-stone-300 dark:border-stone-600 rounded focus:ring-amber-500" %>
         <div>
@@ -214,6 +225,53 @@
           <p class="text-xs text-stone-500 dark:text-stone-400 mt-1">Upload any photo (JPG, PNG, HEIC, WebP) — we'll cut it out into a transparent PNG.</p>
         </div>
       </label>
+    </div>
+
+    <!-- BG Removal Preview: loader -->
+    <div data-bg-preview-target="loader" class="hidden">
+      <div class="p-6 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl text-center">
+        <div class="flex items-center justify-center gap-3 text-sm text-stone-600 dark:text-stone-400">
+          <svg class="animate-spin h-5 w-5 text-amber-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Generating cutout preview…
+        </div>
+      </div>
+    </div>
+
+    <!-- BG Removal Preview: error -->
+    <div data-bg-preview-target="errorMsg" class="hidden p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-sm text-amber-800 dark:text-amber-300"></div>
+
+    <!-- BG Removal Preview: canvas + controls -->
+    <div data-bg-preview-target="previewArea" class="hidden space-y-4">
+      <div class="bg-gradient-to-br from-stone-100 to-stone-200 dark:from-stone-700 dark:to-stone-600 rounded-xl p-4 flex items-center justify-center min-h-[200px]">
+        <canvas data-bg-preview-target="canvas" class="max-w-full max-h-[400px] object-contain"></canvas>
+      </div>
+
+      <div data-bg-preview-target="controls" class="p-4 bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 rounded-xl space-y-3">
+        <p class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide">Adjust Cutout</p>
+
+        <div class="flex items-center gap-3">
+          <label class="text-xs text-stone-600 dark:text-stone-400 w-12 flex-shrink-0">Size</label>
+          <input type="range" min="25" max="200" value="100" step="5"
+                 data-bg-preview-target="zoomSlider"
+                 data-action="input->bg-preview#adjustZoom"
+                 class="flex-grow h-1.5 bg-stone-200 dark:bg-stone-600 rounded-full appearance-none cursor-pointer accent-amber-600">
+          <span data-bg-preview-target="zoomValue" class="text-xs text-stone-500 dark:text-stone-400 w-10 text-right">100%</span>
+        </div>
+
+        <div class="flex items-center gap-2 pt-1">
+          <button type="button" data-action="click->bg-preview#autoTrim"
+                  class="px-3 py-1.5 text-xs font-medium bg-white dark:bg-stone-700 border border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-300 rounded-full hover:bg-stone-100 dark:hover:bg-stone-600 transition-colors">
+            Auto-trim
+          </button>
+          <button type="button" data-action="click->bg-preview#resetEdits"
+                  class="px-3 py-1.5 text-xs font-medium text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
+            Reset
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="p-4 bg-stone-100 dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-xl">
