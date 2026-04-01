@@ -4,7 +4,7 @@ export default class extends Controller {
   static targets = [
     "canvas", "previewArea", "controls",
     "zoomSlider", "zoomValue",
-    "loader", "errorMsg", "usedFlag"
+    "loader", "errorMsg", "usedFlag", "statusMsg"
   ]
 
   static values = {
@@ -56,6 +56,7 @@ export default class extends Controller {
 
       await this.loadPreviewImage(data.preview_url)
       this.showPreview()
+      this.flashStatus("Background removed — adjust below or submit as-is")
     } catch (err) {
       this.showError("Could not generate preview. You can still submit — background removal will run on submit.")
     } finally {
@@ -143,13 +144,22 @@ export default class extends Controller {
 
     if (maxX >= minX && maxY >= minY) {
       const pad = Math.max(8, Math.round(Math.max(maxX - minX, maxY - minY) * 0.03))
-      this.trimBounds = {
+      const newBounds = {
         x: Math.max(0, minX - pad),
         y: Math.max(0, minY - pad),
         w: Math.min(this.previewImage.width, (maxX - minX) + pad * 2),
         h: Math.min(this.previewImage.height, (maxY - minY) + pad * 2)
       }
+
+      const old = this.trimBounds || { x: 0, y: 0, w: this.previewImage.width, h: this.previewImage.height }
+      const changed = Math.abs(newBounds.x - old.x) > 2 || Math.abs(newBounds.y - old.y) > 2 ||
+                      Math.abs(newBounds.w - old.w) > 2 || Math.abs(newBounds.h - old.h) > 2
+
+      this.trimBounds = newBounds
       this.redrawCanvas()
+      this.flashStatus(changed ? "Trimmed!" : "Already tight — nothing to trim")
+    } else {
+      this.flashStatus("No specimen found to trim")
     }
   }
 
@@ -158,11 +168,25 @@ export default class extends Controller {
     this.trimBounds = null
     this.resetSliders()
     this.redrawCanvas()
+    this.flashStatus("Reset to original")
   }
 
   resetSliders() {
     if (this.hasZoomSliderTarget) this.zoomSliderTarget.value = 100
     if (this.hasZoomValueTarget) this.zoomValueTarget.textContent = "100%"
+  }
+
+  flashStatus(message) {
+    if (!this.hasStatusMsgTarget) return
+    const el = this.statusMsgTarget
+    el.textContent = message
+    el.classList.remove("hidden", "opacity-0")
+    el.classList.add("opacity-100")
+    clearTimeout(this._statusTimer)
+    this._statusTimer = setTimeout(() => {
+      el.classList.replace("opacity-100", "opacity-0")
+      setTimeout(() => el.classList.add("hidden"), 300)
+    }, 2500)
   }
 
   hidePreview() {
