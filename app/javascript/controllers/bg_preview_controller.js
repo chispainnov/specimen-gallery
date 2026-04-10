@@ -11,6 +11,8 @@ export default class extends Controller {
     url: String
   }
 
+  static MAX_CANVAS = 1024
+
   previewImage = null
   zoom = 100
   trimBounds = null
@@ -90,13 +92,14 @@ export default class extends Controller {
 
     const bounds = this.trimBounds || { x: 0, y: 0, w: img.width, h: img.height }
 
-    // Fixed square canvas based on the longest edge of the source image
-    const frameSize = Math.max(img.width, img.height)
+    const rawFrame = Math.max(img.width, img.height)
+    const frameSize = Math.min(rawFrame, this.constructor.MAX_CANVAS)
+    const ratio = frameSize / rawFrame
+
     canvas.width = frameSize
     canvas.height = frameSize
 
-    // Scale the specimen within the fixed frame
-    const scale = this.zoom / 100
+    const scale = (this.zoom / 100) * ratio
     const drawW = Math.round(bounds.w * scale)
     const drawH = Math.round(bounds.h * scale)
     const drawX = Math.round((frameSize - drawW) / 2)
@@ -119,13 +122,19 @@ export default class extends Controller {
   autoTrim() {
     if (!this.previewImage) return
 
-    const offscreen = document.createElement("canvas")
-    offscreen.width = this.previewImage.width
-    offscreen.height = this.previewImage.height
-    const ctx = offscreen.getContext("2d")
-    ctx.drawImage(this.previewImage, 0, 0)
+    const img = this.previewImage
+    const maxScan = this.constructor.MAX_CANVAS
+    const scanScale = Math.min(1, maxScan / Math.max(img.width, img.height))
+    const sw = Math.round(img.width * scanScale)
+    const sh = Math.round(img.height * scanScale)
 
-    const imageData = ctx.getImageData(0, 0, offscreen.width, offscreen.height)
+    const offscreen = document.createElement("canvas")
+    offscreen.width = sw
+    offscreen.height = sh
+    const ctx = offscreen.getContext("2d")
+    ctx.drawImage(img, 0, 0, sw, sh)
+
+    const imageData = ctx.getImageData(0, 0, sw, sh)
     const { data, width, height } = imageData
 
     let minX = width, minY = height, maxX = 0, maxY = 0
@@ -143,15 +152,16 @@ export default class extends Controller {
     }
 
     if (maxX >= minX && maxY >= minY) {
-      const pad = Math.max(8, Math.round(Math.max(maxX - minX, maxY - minY) * 0.03))
+      const invScale = 1 / scanScale
+      const pad = Math.max(8, Math.round(Math.max(maxX - minX, maxY - minY) * invScale * 0.03))
       const newBounds = {
-        x: Math.max(0, minX - pad),
-        y: Math.max(0, minY - pad),
-        w: Math.min(this.previewImage.width, (maxX - minX) + pad * 2),
-        h: Math.min(this.previewImage.height, (maxY - minY) + pad * 2)
+        x: Math.max(0, Math.round(minX * invScale) - pad),
+        y: Math.max(0, Math.round(minY * invScale) - pad),
+        w: Math.min(img.width, Math.round((maxX - minX) * invScale) + pad * 2),
+        h: Math.min(img.height, Math.round((maxY - minY) * invScale) + pad * 2)
       }
 
-      const old = this.trimBounds || { x: 0, y: 0, w: this.previewImage.width, h: this.previewImage.height }
+      const old = this.trimBounds || { x: 0, y: 0, w: img.width, h: img.height }
       const changed = Math.abs(newBounds.x - old.x) > 2 || Math.abs(newBounds.y - old.y) > 2 ||
                       Math.abs(newBounds.w - old.w) > 2 || Math.abs(newBounds.h - old.h) > 2
 
@@ -198,7 +208,10 @@ export default class extends Controller {
   }
 
   showPreview() {
-    if (this.hasPreviewAreaTarget) this.previewAreaTarget.classList.remove("hidden")
+    if (this.hasPreviewAreaTarget) {
+      this.previewAreaTarget.classList.remove("hidden")
+      setTimeout(() => this.previewAreaTarget.scrollIntoView({ behavior: "smooth", block: "nearest" }), 100)
+    }
     if (this.hasErrorMsgTarget) this.errorMsgTarget.classList.add("hidden")
   }
 
