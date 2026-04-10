@@ -21,10 +21,19 @@ export default class extends Controller {
   connect() {
     this.boundHandleSubmit = this.handleSubmit.bind(this)
     this.element.addEventListener("submit", this.boundHandleSubmit)
+    this.boundRestoreCanvas = this.restoreCanvas.bind(this)
+    document.addEventListener("visibilitychange", this.boundRestoreCanvas)
   }
 
   disconnect() {
     this.element.removeEventListener("submit", this.boundHandleSubmit)
+    document.removeEventListener("visibilitychange", this.boundRestoreCanvas)
+  }
+
+  restoreCanvas() {
+    if (document.visibilityState === "visible" && this.active && this.previewImage) {
+      this.redrawCanvas()
+    }
   }
 
   async requestPreview() {

@@ -19,12 +19,12 @@
 
     <!-- Specimen Name (REQUIRED) -->
     <div>
-      <%= f.label :specimen_name, "Specimen name", class: "block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2" %>
+      <%= f.label :specimen_name, "Specimen name (common name)", class: "block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2" %>
       <%= f.text_field :specimen_name,
-        placeholder: "e.g., Bismuth / Quartz / Apis mellifera",
+        placeholder: "e.g., Honey Bee / Bismuth / Rock Moss",
         required: true,
         class: "w-full px-4 py-3 bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-600 rounded-xl text-stone-800 dark:text-stone-200 placeholder:text-stone-400 dark:placeholder:text-stone-500 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent" %>
-      <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">For living organisms, you can enter a Latin name (optional).</p>
+      <p class="mt-1 text-xs text-stone-500 dark:text-stone-400">The everyday name people would recognize. Scientific name can go below.</p>
     </div>
 
     <!-- Scientific/Taxonomic Name (OPTIONAL) with GBIF autocomplete -->
