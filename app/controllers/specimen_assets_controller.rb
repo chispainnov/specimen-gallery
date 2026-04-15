@@ -5,7 +5,7 @@ class SpecimenAssetsController < ApplicationController
   UPLOAD_RATE_LIMIT = 10
   UPLOAD_RATE_WINDOW = 1.hour
 
-  BG_PREVIEW_RATE_LIMIT = 3
+  BG_PREVIEW_RATE_LIMIT = 10
   BG_PREVIEW_RATE_WINDOW = 1.hour
 
   def show
@@ -553,12 +553,28 @@ class SpecimenAssetsController < ApplicationController
     Rails.logger.info("Profanity detected in fields: #{detector.flagged_fields.join(', ')}")
   end
 
+  def admin_session?
+    return false unless request.authorization.present?
+
+    admin_username = ENV.fetch("ADMIN_USERNAME") { Rails.env.production? ? nil : "admin" }
+    admin_password = ENV.fetch("ADMIN_PASSWORD") { Rails.env.production? ? nil : "admin" }
+    return false unless admin_username && admin_password
+
+    credentials = ActionController::HttpAuthentication::Basic.decode_credentials(request)
+    user, pass = credentials.split(":", 2)
+    ActiveSupport::SecurityUtils.secure_compare(user.to_s, admin_username) &&
+      ActiveSupport::SecurityUtils.secure_compare(pass.to_s, admin_password)
+  rescue
+    false
+  end
+
   # Rate limiting helpers
   def upload_rate_limit_key
     "upload_rate:#{request.remote_ip}"
   end
 
   def upload_rate_limited?
+    return false if admin_session?
     count = Rails.cache.read(upload_rate_limit_key) || 0
     count >= UPLOAD_RATE_LIMIT
   end
@@ -573,6 +589,7 @@ class SpecimenAssetsController < ApplicationController
   end
 
   def bg_preview_rate_limited?
+    return false if admin_session?
     count = Rails.cache.read(bg_preview_rate_limit_key) || 0
     count >= BG_PREVIEW_RATE_LIMIT
   end
