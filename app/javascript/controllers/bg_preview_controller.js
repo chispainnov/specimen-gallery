@@ -4,6 +4,8 @@ export default class extends Controller {
   static targets = [
     "canvas", "previewArea", "controls",
     "zoomSlider", "zoomValue",
+    "panXSlider", "panXValue",
+    "panYSlider", "panYValue",
     "loader", "errorMsg", "usedFlag", "statusMsg"
   ]
 
@@ -15,19 +17,43 @@ export default class extends Controller {
 
   previewImage = null
   zoom = 100
+  // panX/panY are fractions of frameSize/2 in [-1, 1].
+  // 0 = centered. Positive X = right, positive Y = down.
+  panX = 0
+  panY = 0
   trimBounds = null
   active = false
+  dragging = false
+  dragStart = null
 
   connect() {
     this.boundHandleSubmit = this.handleSubmit.bind(this)
     this.element.addEventListener("submit", this.boundHandleSubmit)
     this.boundRestoreCanvas = this.restoreCanvas.bind(this)
     document.addEventListener("visibilitychange", this.boundRestoreCanvas)
+
+    this.boundPointerDown = this.onPointerDown.bind(this)
+    this.boundPointerMove = this.onPointerMove.bind(this)
+    this.boundPointerUp = this.onPointerUp.bind(this)
+    if (this.hasCanvasTarget) {
+      this.canvasTarget.addEventListener("pointerdown", this.boundPointerDown)
+      this.canvasTarget.style.cursor = "grab"
+      this.canvasTarget.style.touchAction = "none"
+    }
+    window.addEventListener("pointermove", this.boundPointerMove)
+    window.addEventListener("pointerup", this.boundPointerUp)
+    window.addEventListener("pointercancel", this.boundPointerUp)
   }
 
   disconnect() {
     this.element.removeEventListener("submit", this.boundHandleSubmit)
     document.removeEventListener("visibilitychange", this.boundRestoreCanvas)
+    if (this.hasCanvasTarget) {
+      this.canvasTarget.removeEventListener("pointerdown", this.boundPointerDown)
+    }
+    window.removeEventListener("pointermove", this.boundPointerMove)
+    window.removeEventListener("pointerup", this.boundPointerUp)
+    window.removeEventListener("pointercancel", this.boundPointerUp)
   }
 
   restoreCanvas() {
@@ -82,6 +108,8 @@ export default class extends Controller {
       img.onload = () => {
         this.previewImage = img
         this.zoom = 100
+        this.panX = 0
+        this.panY = 0
         this.trimBounds = null
         this.resetSliders()
         this.redrawCanvas()
@@ -111,8 +139,10 @@ export default class extends Controller {
     const scale = (this.zoom / 100) * ratio
     const drawW = Math.round(bounds.w * scale)
     const drawH = Math.round(bounds.h * scale)
-    const drawX = Math.round((frameSize - drawW) / 2)
-    const drawY = Math.round((frameSize - drawH) / 2)
+    const offsetX = Math.round(this.panX * frameSize / 2)
+    const offsetY = Math.round(this.panY * frameSize / 2)
+    const drawX = Math.round((frameSize - drawW) / 2) + offsetX
+    const drawY = Math.round((frameSize - drawH) / 2) + offsetY
 
     ctx.clearRect(0, 0, frameSize, frameSize)
     ctx.drawImage(img, bounds.x, bounds.y, bounds.w, bounds.h, drawX, drawY, drawW, drawH)
@@ -126,6 +156,88 @@ export default class extends Controller {
     this.zoom = parseInt(event.target.value, 10)
     if (this.hasZoomValueTarget) this.zoomValueTarget.textContent = `${this.zoom}%`
     this.redrawCanvas()
+  }
+
+  adjustPanX(event) {
+    this.panX = parseInt(event.target.value, 10) / 100
+    this.updatePanLabels()
+    this.redrawCanvas()
+  }
+
+  adjustPanY(event) {
+    this.panY = parseInt(event.target.value, 10) / 100
+    this.updatePanLabels()
+    this.redrawCanvas()
+  }
+
+  recenter() {
+    this.panX = 0
+    this.panY = 0
+    this.syncPanSliders()
+    this.redrawCanvas()
+    this.flashStatus("Recentered")
+  }
+
+  onPointerDown(event) {
+    if (!this.previewImage) return
+    event.preventDefault()
+    this.dragging = true
+    this.canvasTarget.setPointerCapture(event.pointerId)
+    this.canvasTarget.style.cursor = "grabbing"
+    this.dragStart = {
+      x: event.clientX,
+      y: event.clientY,
+      panX: this.panX,
+      panY: this.panY
+    }
+  }
+
+  onPointerMove(event) {
+    if (!this.dragging || !this.previewImage || !this.hasCanvasTarget) return
+    const rect = this.canvasTarget.getBoundingClientRect()
+    if (rect.width === 0 || rect.height === 0) return
+
+    const dx = event.clientX - this.dragStart.x
+    const dy = event.clientY - this.dragStart.y
+
+    // CSS pixels → canvas fraction (canvas spans -1..1 across full width/height).
+    const fracX = (dx / rect.width) * 2
+    const fracY = (dy / rect.height) * 2
+
+    this.panX = this.clamp(this.dragStart.panX + fracX, -1, 1)
+    this.panY = this.clamp(this.dragStart.panY + fracY, -1, 1)
+    this.syncPanSliders()
+    this.redrawCanvas()
+  }
+
+  onPointerUp(event) {
+    if (!this.dragging) return
+    this.dragging = false
+    if (this.hasCanvasTarget) {
+      try { this.canvasTarget.releasePointerCapture(event.pointerId) } catch (_) {}
+      this.canvasTarget.style.cursor = "grab"
+    }
+  }
+
+  clamp(v, min, max) {
+    return Math.max(min, Math.min(max, v))
+  }
+
+  syncPanSliders() {
+    if (this.hasPanXSliderTarget) this.panXSliderTarget.value = Math.round(this.panX * 100)
+    if (this.hasPanYSliderTarget) this.panYSliderTarget.value = Math.round(this.panY * 100)
+    this.updatePanLabels()
+  }
+
+  updatePanLabels() {
+    if (this.hasPanXValueTarget) {
+      const v = Math.round(this.panX * 100)
+      this.panXValueTarget.textContent = v === 0 ? "0" : (v > 0 ? `+${v}` : `${v}`)
+    }
+    if (this.hasPanYValueTarget) {
+      const v = Math.round(this.panY * 100)
+      this.panYValueTarget.textContent = v === 0 ? "0" : (v > 0 ? `+${v}` : `${v}`)
+    }
   }
 
   autoTrim() {
@@ -184,6 +296,8 @@ export default class extends Controller {
 
   resetEdits() {
     this.zoom = 100
+    this.panX = 0
+    this.panY = 0
     this.trimBounds = null
     this.resetSliders()
     this.redrawCanvas()
@@ -193,6 +307,7 @@ export default class extends Controller {
   resetSliders() {
     if (this.hasZoomSliderTarget) this.zoomSliderTarget.value = 100
     if (this.hasZoomValueTarget) this.zoomValueTarget.textContent = "100%"
+    this.syncPanSliders()
   }
 
   flashStatus(message) {

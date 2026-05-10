@@ -250,7 +250,10 @@
       </div>
 
       <div data-bg-preview-target="controls" class="p-4 bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 rounded-xl space-y-3">
-        <p class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide">Adjust Cutout</p>
+        <div class="flex items-center justify-between">
+          <p class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide">Adjust Cutout</p>
+          <p class="text-[10px] text-stone-400 dark:text-stone-500 italic">Tip: drag the image to reposition</p>
+        </div>
 
         <div class="flex items-center gap-3">
           <label class="text-xs text-stone-600 dark:text-stone-400 w-12 flex-shrink-0">Size</label>
@@ -261,10 +264,39 @@
           <span data-bg-preview-target="zoomValue" class="text-xs text-stone-500 dark:text-stone-400 w-10 text-right">100%</span>
         </div>
 
-        <div class="flex items-center gap-2 pt-1">
+        <div class="flex items-center gap-3">
+          <label class="text-xs text-stone-600 dark:text-stone-400 w-12 flex-shrink-0 flex items-center gap-1" title="Horizontal position">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h8m-8 0l3-3m-3 3l3 3m5-3l-3-3m3 3l-3 3"/></svg>
+            X
+          </label>
+          <input type="range" min="-100" max="100" value="0" step="1"
+                 data-bg-preview-target="panXSlider"
+                 data-action="input->bg-preview#adjustPanX"
+                 class="flex-grow h-1.5 bg-stone-200 dark:bg-stone-600 rounded-full appearance-none cursor-pointer accent-amber-600">
+          <span data-bg-preview-target="panXValue" class="text-xs text-stone-500 dark:text-stone-400 w-10 text-right tabular-nums">0</span>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <label class="text-xs text-stone-600 dark:text-stone-400 w-12 flex-shrink-0 flex items-center gap-1" title="Vertical position">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v8m0-8l-3 3m3-3l3 3m-3 5l-3-3m3 3l3-3"/></svg>
+            Y
+          </label>
+          <input type="range" min="-100" max="100" value="0" step="1"
+                 data-bg-preview-target="panYSlider"
+                 data-action="input->bg-preview#adjustPanY"
+                 class="flex-grow h-1.5 bg-stone-200 dark:bg-stone-600 rounded-full appearance-none cursor-pointer accent-amber-600">
+          <span data-bg-preview-target="panYValue" class="text-xs text-stone-500 dark:text-stone-400 w-10 text-right tabular-nums">0</span>
+        </div>
+
+        <div class="flex items-center gap-2 pt-1 flex-wrap">
           <button type="button" data-action="click->bg-preview#autoTrim"
                   class="px-3 py-1.5 text-xs font-medium bg-white dark:bg-stone-700 border border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-300 rounded-full hover:bg-stone-100 dark:hover:bg-stone-600 transition-colors">
             Auto-trim
+          </button>
+          <button type="button" data-action="click->bg-preview#recenter"
+                  class="px-3 py-1.5 text-xs font-medium bg-white dark:bg-stone-700 border border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-300 rounded-full hover:bg-stone-100 dark:hover:bg-stone-600 transition-colors inline-flex items-center gap-1">
+            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v8m-4-4h8M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Recenter
           </button>
           <button type="button" data-action="click->bg-preview#resetEdits"
                   class="px-3 py-1.5 text-xs font-medium text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
