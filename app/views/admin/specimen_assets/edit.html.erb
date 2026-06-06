@@ -1,4 +1,6 @@
-<div class="w-full max-w-2xl mx-auto pt-4 md:pt-0">
+<div class="w-full max-w-2xl mx-auto pt-4 md:pt-0"
+     data-controller="image-resize"
+     <% if @specimen_asset.image.attached? %>data-image-resize-url-value="<%= rails_storage_proxy_path(@specimen_asset.image) %>"<% end %>>
   <div class="mb-6">
     <%= link_to "← Back to queue", admin_specimen_assets_path, class: "text-sm text-stone-500 dark:text-stone-400 hover:text-amber-600 dark:hover:text-amber-500" %>
   </div>
@@ -10,14 +12,93 @@
     <!-- Image preview -->
     <div class="md:col-span-1">
       <div class="sticky top-24">
-        <div class="aspect-square bg-gradient-to-br from-stone-100 to-stone-200 dark:from-stone-700 dark:to-stone-800 rounded-2xl overflow-hidden mb-4">
-          <% if @specimen_asset.image.attached? %>
-            <%= image_tag @specimen_asset.image,
-              alt: @specimen_asset.display_name,
-              class: "w-full h-full object-contain p-4" %>
-          <% end %>
+        <!-- Static preview -->
+        <div data-image-resize-target="staticPreview">
+          <div class="aspect-square bg-gradient-to-br from-stone-100 to-stone-200 dark:from-stone-700 dark:to-stone-800 rounded-2xl overflow-hidden mb-3">
+            <% if @specimen_asset.image.attached? %>
+              <%= image_tag @specimen_asset.image,
+                alt: @specimen_asset.display_name,
+                class: "w-full h-full object-contain p-4" %>
+            <% end %>
+          </div>
         </div>
-        
+
+        <% if @specimen_asset.image.attached? %>
+          <!-- Resize / reframe editor (mirrors the upload-page cutout editor) -->
+          <div data-image-resize-target="editor" class="hidden space-y-3 mb-3">
+            <div class="aspect-square bg-gradient-to-br from-stone-100 to-stone-200 dark:from-stone-700 dark:to-stone-600 rounded-2xl p-3 flex items-center justify-center">
+              <canvas data-image-resize-target="canvas" class="max-w-full max-h-[320px] object-contain"></canvas>
+            </div>
+
+            <div class="p-3 bg-stone-50 dark:bg-stone-800/50 border border-stone-200 dark:border-stone-700 rounded-xl space-y-3">
+              <div class="flex items-center justify-between">
+                <p class="text-xs font-medium text-stone-500 dark:text-stone-400 uppercase tracking-wide">Adjust Image</p>
+                <p class="text-[10px] text-stone-400 dark:text-stone-500 italic">Drag image to reposition</p>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <label class="text-xs text-stone-600 dark:text-stone-400 w-10 flex-shrink-0">Size</label>
+                <input type="range" min="25" max="200" value="100" step="5"
+                       data-image-resize-target="zoomSlider"
+                       data-action="input->image-resize#adjustZoom"
+                       class="flex-grow h-1.5 bg-stone-200 dark:bg-stone-600 rounded-full appearance-none cursor-pointer accent-amber-600">
+                <span data-image-resize-target="zoomValue" class="text-xs text-stone-500 dark:text-stone-400 w-10 text-right">100%</span>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <label class="text-xs text-stone-600 dark:text-stone-400 w-10 flex-shrink-0 flex items-center gap-1" title="Horizontal position">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h8m-8 0l3-3m-3 3l3 3m5-3l-3-3m3 3l-3 3"/></svg>
+                  X
+                </label>
+                <input type="range" min="-100" max="100" value="0" step="1"
+                       data-image-resize-target="panXSlider"
+                       data-action="input->image-resize#adjustPanX"
+                       class="flex-grow h-1.5 bg-stone-200 dark:bg-stone-600 rounded-full appearance-none cursor-pointer accent-amber-600">
+                <span data-image-resize-target="panXValue" class="text-xs text-stone-500 dark:text-stone-400 w-10 text-right tabular-nums">0</span>
+              </div>
+
+              <div class="flex items-center gap-3">
+                <label class="text-xs text-stone-600 dark:text-stone-400 w-10 flex-shrink-0 flex items-center gap-1" title="Vertical position">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v8m0-8l-3 3m3-3l3 3m-3 5l-3-3m3 3l3-3"/></svg>
+                  Y
+                </label>
+                <input type="range" min="-100" max="100" value="0" step="1"
+                       data-image-resize-target="panYSlider"
+                       data-action="input->image-resize#adjustPanY"
+                       class="flex-grow h-1.5 bg-stone-200 dark:bg-stone-600 rounded-full appearance-none cursor-pointer accent-amber-600">
+                <span data-image-resize-target="panYValue" class="text-xs text-stone-500 dark:text-stone-400 w-10 text-right tabular-nums">0</span>
+              </div>
+
+              <div class="flex items-center gap-2 pt-1 flex-wrap">
+                <button type="button" data-action="click->image-resize#autoTrim"
+                        class="px-3 py-1.5 text-xs font-medium bg-white dark:bg-stone-700 border border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-300 rounded-full hover:bg-stone-100 dark:hover:bg-stone-600 transition-colors">
+                  Auto-trim
+                </button>
+                <button type="button" data-action="click->image-resize#recenter"
+                        class="px-3 py-1.5 text-xs font-medium bg-white dark:bg-stone-700 border border-stone-300 dark:border-stone-600 text-stone-600 dark:text-stone-300 rounded-full hover:bg-stone-100 dark:hover:bg-stone-600 transition-colors inline-flex items-center gap-1">
+                  <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v8m-4-4h8M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  Recenter
+                </button>
+                <button type="button" data-action="click->image-resize#resetEdits"
+                        class="px-3 py-1.5 text-xs font-medium text-stone-500 dark:text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition-colors">
+                  Reset
+                </button>
+                <span data-image-resize-target="statusMsg"
+                      class="hidden text-xs text-emerald-600 dark:text-emerald-400 ml-auto transition-opacity duration-300 opacity-0"></span>
+              </div>
+            </div>
+          </div>
+
+          <button type="button"
+                  data-image-resize-target="toggleButton"
+                  data-action="click->image-resize#toggle"
+                  class="w-full mb-2 px-4 py-2 text-sm font-medium bg-white dark:bg-stone-800 border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-300 rounded-full hover:bg-stone-50 dark:hover:bg-stone-700 transition-colors inline-flex items-center justify-center gap-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+            Resize / reframe image
+          </button>
+          <p class="text-[11px] text-stone-400 dark:text-stone-500 mb-4">Outputs a square transparent PNG. Save the form to apply.</p>
+        <% end %>
+
         <div class="space-y-2 text-sm text-stone-500 dark:text-stone-400">
           <p>Submitted <%= time_ago_in_words(@specimen_asset.created_at) %> ago</p>
           <% if @specimen_asset.bg_removed? %>
@@ -52,7 +133,9 @@
         </div>
       <% end %>
 
-      <%= form_with model: [:admin, @specimen_asset], class: "space-y-6", data: { controller: "taxon-autocomplete license", taxon_autocomplete_url_value: suggest_taxa_path } do |f| %>
+      <%= form_with model: [:admin, @specimen_asset], class: "space-y-6", html: { multipart: true }, data: { controller: "taxon-autocomplete license", taxon_autocomplete_url_value: suggest_taxa_path } do |f| %>
+        <%= f.file_field :image, accept: "image/png", class: "hidden", data: { image_resize_target: "fileField" } %>
+
         <!-- Specimen name (required display name) -->
         <div>
           <%= f.label :specimen_name, "Specimen name", class: "block text-sm font-medium text-stone-700 dark:text-stone-300 mb-2" %>

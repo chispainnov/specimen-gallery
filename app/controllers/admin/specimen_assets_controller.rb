@@ -129,6 +129,11 @@ module Admin
         @specimen_asset.status = params[:specimen_asset][:status]
       end
 
+      # Replace the image if the admin reframed/resized it (square PNG from the editor)
+      if params[:specimen_asset][:image].present?
+        @specimen_asset.image.attach(params[:specimen_asset][:image])
+      end
+
       if @specimen_asset.save
         redirect_to admin_specimen_assets_path, notice: "Specimen updated successfully."
       else
